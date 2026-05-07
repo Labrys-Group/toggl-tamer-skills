@@ -4,3 +4,10 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Editor settings
+.vscode/
+
+# Skill-local user configs (contain PII: emails, account/user IDs, repo paths)
+skills/*/config.json
+!skills/*/config.example.json

@@ -1,0 +1,49 @@
+{
+  "projects": [
+    {
+      "name": "Example Project",
+      "tracker": "jira",
+      "jiraProjectKey": "PROJ",
+      "atlassianSiteUrl": "https://your-org.atlassian.net",
+      "atlassianCloudId": "00000000-0000-0000-0000-000000000000",
+      "repos": ["/absolute/path/to/your/repo"],
+      "githubRepoSlug": "your-org/your-repo",
+      "togglProjectName": "Example Project"
+    }
+  ],
+  "workdayDefaults": {
+    "startTime": "09:00",
+    "endTime": "17:30",
+    "lunchMinutes": 60,
+    "lunchAroundTime": "12:30",
+    "timezone": "Australia/Brisbane"
+  },
+  "userIdentities": {
+    "primaryEmail": "you@example.com",
+    "gitAuthorEmails": ["you@example.com"],
+    "atlassianAccountId": null,
+    "notionUserId": null,
+    "slackUserId": null
+  },
+  "notionDailyLog": {
+    "enabled": true,
+    "titlePattern": "^\\d{4}-\\d{2}-\\d{2}$",
+    "parentPageId": null
+  },
+  "internalProject": {
+    "name": "Internal / Ops",
+    "label": "(internal)",
+    "useFor": ["meetings without a project ticket", "process discussions", "ticket triage", "code review on others' PRs", "tooling/automation work"],
+    "togglProjectName": null
+  },
+  "slackEnabled": true,
+  "calendarEnabled": true,
+  "notionEnabled": true,
+  "togglEnabled": true,
+  "togglWrite": {
+    "skipMeta": ["(lunch)", "[unaccounted]"],
+    "tagWithTicket": true,
+    "fallbackProjectName": null
+  },
+  "excludeRepos": []
+}

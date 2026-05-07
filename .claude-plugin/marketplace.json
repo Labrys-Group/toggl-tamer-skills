@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "REPO_NAME",
+      "name": "toggl-tamer-skills",
       "source": ".",
       "skills": [
-        "./skills/hello-skill"
+        "./skills/toggl-tamer"
       ]
     }
   ]

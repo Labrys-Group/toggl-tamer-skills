@@ -1,44 +1,36 @@
-# `<repo-name>`
+# `toggl-tamer-skills`
 
-[![skills.sh](https://skills.sh/b/<owner>/<repo>)](https://skills.sh/<owner>/<repo>)
+[![skills.sh](https://skills.sh/b/Labrys-Group/toggl-tamer-skills)](https://skills.sh/Labrys-Group/toggl-tamer-skills)
 
-A collection of [Agent Skills](https://agentskills.io) — reusable instruction sets for AI coding agents (Claude Code, Cursor, Codex, OpenCode, and [50+ more](https://github.com/vercel-labs/skills#supported-agents)).
+An [Agent Skill](https://agentskills.io) for AI coding agents (Claude Code, Cursor, Codex, OpenCode, and [50+ more](https://github.com/vercel-labs/skills#supported-agents)) that reconstructs a daily ticket-centric work timeline — ready for pasting into Toggl or any other timesheet tool.
+
+The skill ingests evidence from calendar, git history, pull requests, issue trackers (Jira/GitHub) and Slack, then emits a clean, non-overlapping timeline grouped by ticket.
 
 ## Install
 
 ```bash
-# All skills
-npx skills add <owner>/<repo>
-
-# A specific skill
-npx skills add <owner>/<repo> --skill hello-skill
+# Add this skill to the current project
+npx skills add Labrys-Group/toggl-tamer-skills
 
 # Globally (across all your projects)
-npx skills add <owner>/<repo> -g
+npx skills add Labrys-Group/toggl-tamer-skills -g
 ```
+
+## Usage
+
+In your agent, invoke the skill (e.g. in Claude Code: `/toggl-tamer`) optionally with a date:
+
+```
+/toggl-tamer 2026-05-05
+```
+
+If no date is supplied, the skill assumes today.
 
 ## Skills in this repo
 
 | Skill | Description |
 | ----- | ----------- |
-| [`hello-skill`](skills/hello-skill/SKILL.md) | Example placeholder skill — replace it. |
-
-## Adding a new skill
-
-1. Create `skills/<skill-name>/SKILL.md` with YAML frontmatter:
-   ```markdown
-   ---
-   name: <skill-name>
-   description: One-sentence summary including trigger phrases.
-   ---
-
-   # <Skill Name>
-
-   Instructions for the agent…
-   ```
-2. Add the skill to the table above.
-3. Add `"./skills/<skill-name>"` to `.claude-plugin/marketplace.json`.
-4. Run `node scripts/lint-skills.mjs` locally — CI runs the same check on PRs.
+| [`toggl-tamer`](skills/toggl-tamer/SKILL.md) | Reconstruct a daily ticket-centric work timeline from Jira/GitHub, git, calendar, and Slack signals. |
 
 ## Repo layout
 
@@ -47,18 +39,19 @@ npx skills add <owner>/<repo> -g
 ├── .claude-plugin/marketplace.json   # Claude Code plugin marketplace manifest
 ├── .github/workflows/lint-skills.yml # CI: validates SKILL.md frontmatter
 ├── scripts/lint-skills.mjs           # Frontmatter linter
-└── skills/                           # One folder per skill
-    └── hello-skill/SKILL.md
+└── skills/
+    └── toggl-tamer/
+        ├── SKILL.md                  # Skill instructions
+        └── config.json               # Skill-specific configuration
 ```
 
-## Using this as a template
+## Development
 
-This repo is a GitHub template. Click **Use this template** at the top of the repo, then:
+Run the linter locally before opening a PR (CI runs the same check):
 
-1. Replace `<owner>`, `<repo>`, and `<repo-name>` placeholders in `README.md`.
-2. Update `LICENSE` (year + owner).
-3. Update the `name` field in `.claude-plugin/marketplace.json`.
-4. Replace `skills/hello-skill/` with your own skill(s).
+```bash
+node scripts/lint-skills.mjs
+```
 
 ## Licence
 
