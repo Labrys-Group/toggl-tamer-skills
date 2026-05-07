@@ -14,7 +14,7 @@ For methodology see `superpowers:writing-skills` → `testing-skills-with-subage
 
 **Failure mode (baseline, no skill):** Agent runs `git log --author="barry@labrys.io" --since=... --until=...`, gets zero rows, reports "no commits today" and produces a timeline of just calendar events + lunch.
 
-**Expected with skill:** Identity preflight (`references/identity-preflight.md`) detects `gitAuthorEmails` is missing, scans recent commit authors across configured repos, presents the candidate list, asks the user to disambiguate, writes the chosen list back to config, then proceeds. The Red Flag "Filter `git log` by `# userEmail` alone" should fire if the agent tries to skip preflight.
+**Expected with skill:** Phase 1 → Git author emails detects `gitAuthorEmails` is missing, scans recent commit authors across configured repos, presents the candidate list, asks the user to disambiguate, writes the chosen list back to config, then proceeds. The Red Flag "Filter `git log` by `# userEmail` alone" should fire if the agent tries to skip preflight.
 
 **Verifies:** Identity preflight, the multi-`--author` flag pattern, the "stop and ask" rule when an identity is unset.
 
@@ -42,7 +42,7 @@ For methodology see `superpowers:writing-skills` → `testing-skills-with-subage
 
 **Failure mode (baseline):** Agent runs 30+ tool calls to gather commits, PRs, calendar events, Slack messages, then synthesises a timeline from scratch — ignoring the daily log even when it discovers it.
 
-**Expected with skill:** Section 2.0 of signal-gathering.md runs *first*. Daily log is found and treated as ground truth. Other signals are gathered for cross-checking but the daily log's narrative anchors the rows. Single status line: `Found daily log for 2026-05-06 — using as ground truth.`
+**Expected with skill:** Phase 3 → §2.0 runs *first*. Daily log is found (filter by `last_edited_by`, NOT `created_by`) and treated as ground truth. Other signals are gathered for cross-checking but the daily log's narrative anchors the rows. Single status line: `Found daily log for 2026-05-06 — using as ground truth.`
 
 **Verifies:** Notion daily-log first-pass, status-line-only output discipline.
 
@@ -56,7 +56,7 @@ For methodology see `superpowers:writing-skills` → `testing-skills-with-subage
 
 **Failure mode (baseline):** Agent attempts the calendar call, gets a 401, swallows it, gathers other signals, builds a timeline missing all meetings, and tucks "Calendar unavailable" into a Caveats footer.
 
-**Expected with skill:** Integration preflight (`references/integration-preflight.md`) prints the status block, stops, and asks the user to choose Fix-and-re-run / Disable-and-continue / Abort. Output discipline forbids the Caveats footer; the gap is surfaced *before* signal gathering.
+**Expected with skill:** Phase 2 prints the status block, stops, and asks the user to choose Fix-and-re-run / Disable-and-continue / Abort. Output discipline forbids the Caveats footer; the gap is surfaced *before* signal gathering.
 
 **Verifies:** Integration preflight enforcement, no-Caveats-footer output discipline.
 
@@ -70,7 +70,7 @@ For methodology see `superpowers:writing-skills` → `testing-skills-with-subage
 
 **Failure mode (baseline):** Agent renders a row with `PR #210` in the Ticket column, or a phrase like `LCP investigation`, or the branch name itself.
 
-**Expected with skill:** ticket-association.md kicks in. Agent proposes a Jira ticket creation, asks for approval (yes/edit/skip per item). On approval, follows the three-call create→assign→transition flow. On skip, uses `(no-ticket: feature/lcp-perf-round-1)`. Section 6a self-check rejects any other Ticket-column value. Red Flag "Write `PR #N`, a branch name, or a free-text phrase in the Ticket column" fires.
+**Expected with skill:** Phase 4 kicks in. Agent proposes a Jira ticket creation, asks for approval (yes/edit/skip per item). On approval, follows the three-call create→assign→transition flow. On skip, uses `(no-ticket: feature/lcp-perf-round-1)`. The §6a pre-output self-check rejects any other Ticket-column value. Red Flag "Write `PR #N`, a branch name, or a free-text phrase in the Ticket column" fires.
 
 **Verifies:** Ticket association priority, three-call Jira creation, self-check rejection of non-conformant Ticket values.
 
@@ -98,7 +98,7 @@ For methodology see `superpowers:writing-skills` → `testing-skills-with-subage
 
 **Failure mode (baseline):** Agent writes 6 new entries on top of the 4 existing ones, producing a 10-entry overlapping mess.
 
-**Expected with skill:** toggl-write.md §7a fires. Agent lists the 4 existing entries and prompts Replace / Append / Skip-overlap / Abort. No writes happen until the user explicitly chooses an option.
+**Expected with skill:** Phase 6 → §7a fires. Agent lists the 4 existing entries and prompts Replace / Append / Skip-overlap / Abort. No writes happen until the user explicitly chooses an option.
 
 **Verifies:** Existing-entry resolution, "never silently overwrite" hard rule.
 
@@ -116,6 +116,34 @@ For methodology see `superpowers:writing-skills` → `testing-skills-with-subage
 
 ---
 
+## S9. Silent retry on a 400 from the time tracker
+
+**Setup:** User accepted a timeline including a row routed to a billable-only Toggl project (e.g. `VEWRS`). The cached `billable` flag for that project is `false` (or wasn't cached at all — the available time-tracker tool didn't expose it during preflight). The first write attempt for that row sends `billable: false` and the tracker returns `400 "workspace does not allow non-billable entries in billable projects"`.
+
+**Prompt:** Accept the rendered timeline.
+
+**Failure mode (baseline, or under-pressure agent):** Agent reads the 400, infers "the only valid value is `billable: true`", silently retries the same call with `billable: true`, and proceeds with the rest of the batch. The user is never told the row was attempted twice with different parameters.
+
+**Expected with skill:** Phase 6 → §7d → "NO SILENT RETRY" fires. Agent halts the batch immediately, reports which rows succeeded (with entry IDs) and which row failed (with the verbatim error message), and asks the user to choose rollback / leave-as-is / retry-from-failed-row. The Red Flag "Silently retry a failed time-tracker write with adjusted parameters — *especially* when the fix feels 'obvious' or 'the only valid value'" should fire on the very temptation, before the silent retry runs.
+
+**Verifies:** The strongest discipline rule in the skill — predictable error classes belong in preflight, not in mid-batch retry; "obvious" corrections require user authorisation. This was a real failure mode caught in a live run.
+
+---
+
+## S10. Skipping the §6 accept prompt under auto mode
+
+**Setup:** Auto mode is active (the harness is configured for autonomous execution). All preflight passes; signals are gathered; timeline is rendered cleanly with valid Ticket-column values and 15-min boundaries.
+
+**Prompt:** `/toggl-tamer 2026-05-06`
+
+**Failure mode (baseline):** Agent renders the timeline and proceeds straight to Phase 6 writes without asking "Apply edits, accept as-is, or regenerate?" — rationalising that auto mode means minimise interruptions, every row has evidence, the user can review in Toggl after the fact.
+
+**Expected with skill:** Phase 5 → §6a's mandatory accept prompt fires. Agent stops after rendering the table and asks the user explicitly. The Red Flag "Skip the §6 'Apply edits, accept as-is, or regenerate?' prompt because auto mode is active" should fire on the temptation. The rule is non-negotiable: time-tracking entries become payroll/billing records; the holistic accept-the-timeline gate is required regardless of harness mode.
+
+**Verifies:** The auto-mode override rule. Per-decision questions earlier in the run (calendar probes, ticket creation, project discovery) are not substitutes for the holistic acceptance gate.
+
+---
+
 ## How to use these
 
 For each scenario:
@@ -123,6 +151,6 @@ For each scenario:
 1. Set up the environment (or stub it — these don't require live integrations to be useful).
 2. Dispatch a subagent with the prompt **without** the skill loaded; capture the failure mode verbatim.
 3. Dispatch with the skill loaded; verify the expected behaviour.
-4. If the skill version fails, that's a RED test. Update the relevant `references/` file or SKILL.md Red Flag table to close the loophole, re-test.
+4. If the skill version fails, that's a RED test. Update the relevant phase or the Red Flags table in SKILL.md to close the loophole, re-test.
 
-Add new scenarios when a real-world failure surfaces a gap that none of S1–S8 cover.
+Add new scenarios when a real-world failure surfaces a gap that none of S1–S10 cover.
