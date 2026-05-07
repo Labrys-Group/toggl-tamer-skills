@@ -1,0 +1,15 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "metadata": {
+    "pluginRoot": "."
+  },
+  "plugins": [
+    {
+      "name": "REPO_NAME",
+      "source": ".",
+      "skills": [
+        "./skills/hello-skill"
+      ]
+    }
+  ]
+}
